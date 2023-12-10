@@ -11,7 +11,7 @@ testPath = "/home/clientbox/testing"
 
 def getSimilarity(image1, image2):
     ORBScore = orb.compare(image1, image2, cv2.ORB_create())
-    SIFTScore = SIFT.compare(image1, image2, cv2.SIFT_create())
+    SIFTScore = SIFT.compare(image1, image2, cv2.xfeatures2d.SIFT_create())
     SURFScore = Surf.compare(image1, image2, cv2.xfeatures2d.SURF_create())
 
     return ORBScore + SIFTScore + SURFScore
@@ -32,7 +32,7 @@ def sampleTest():
     for testNum in range(0,10):
         results = dict()
         # threshRange = range(20, 200, 5)
-        threshRange = range(300, 800, 5)
+        threshRange = range(100, 600, 5)
         for threshold in threshRange:
             threshold = threshold / 100
             results[threshold] = {
