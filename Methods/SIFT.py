@@ -22,7 +22,6 @@ def compare(image1, image2, detector):
 
     flann = cv2.FlannBasedMatcher(dict(algorithm=1, trees=5), dict(checks=50))
     matches = flann.knnMatch(desc1, desc2, k=2)
-    result = cv2.drawMatchesKnn(finger1, kp1, finger2, kp2, matches, None)
 
     #Ratio Test
     foundMatch = []
