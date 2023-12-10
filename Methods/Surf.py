@@ -4,9 +4,10 @@ import random
 
 import cv2
 import os
-trainPath = "C:\Users\rlvkl\training"
-testPath = "C:\Users\rlvkl\testing"
+trainPath = "/home/clientbox/training"
+testPath = "/home/clientbox/testing"
 threshold = 0.63
+loweRatio = 0.75
 def detect(image, detector):
     finger = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     keyPoints, descriptors = detector.detectAndCompute(finger, None)
@@ -26,7 +27,7 @@ def compare(image1, image2, detector):
     #Ratio Test
     foundMatch = []
     for m, n in matches:
-        if m.distance < 0.75 * n.distance:
+        if m.distance < loweRatio * n.distance:
             foundMatch.append([m])
 
     a = len(foundMatch)
@@ -40,11 +41,11 @@ def fullTest():
 
     for file in os.listdir(trainPath):
         if file.endswith(".png"):
-            trainFiles.append(trainPath + '\\' + file)
+            trainFiles.append(trainPath + '/' + file)
 
     for file in os.listdir(testPath):
         if file.endswith(".png"):
-            testFiles.append(testPath + '\\' + file)
+            testFiles.append(testPath + '/' + file)
 
     trueAccept = 0
     falseAccept = 0
@@ -53,7 +54,7 @@ def fullTest():
 
     for findex, refFile in enumerate(trainFiles + testFiles):
         for sIndex, subFile in enumerate((trainFiles + testFiles)[findex:]):
-            simPercent = compare(refFile, subFile, cv2.SURF_create())
+            simPercent = compare(refFile, subFile, cv2.xfeatures2d.SURF_create())
             print(f'{refFile} compared to {subFile}: %{simPercent}')
             if simPercent >= threshold:
                 if refFile[-11:] == subFile[-11:]:
@@ -77,37 +78,48 @@ def sampleTest():
 
     for file in os.listdir(trainPath):
         if file.endswith(".png") and file.startswith('f'):
-            trainFiles.append(trainPath + '\\' + file)
+            trainFiles.append(trainPath + '/' + file)
 
     for file in os.listdir(testPath):
         if file.endswith(".png") and file.startswith('f'):
-            testFiles.append(testPath + '\\' + file)
+            testFiles.append(testPath + '/' + file)
 
-    results = dict()
+    testResults = []
+    for testNum in range(0,10):
+        results = dict()
+        threshRange = range(20, 200, 5)
+        for threshold in threshRange:
+            threshold = threshold / 100
+            results[threshold] = {
+                "trueAccept": 0,
+                "falseAccept": 0,
+                "trueReject": 0,
+                "falseReject": 0
+            }
 
-    for threshold in range(20, 200, 5):
-        threshold = threshold/100
-        results[threshold] = {
-            "trueAccept": 0,
-            "falseAccept": 0,
-            "trueReject": 0,
-            "falseReject": 0
-        }
         testRange = trainFiles + testFiles
         for i in range(0, math.floor(len(testRange)/10)):
-            refFile = testRange.pop(random.randint(0, len(testRange)))
-            score = compare(refFile, refFile[0:-12] + 's' + refFile[-11:], cv2.SURF_create())
-            if score >= threshold:
-                results[threshold]['trueAccept'] += 1
-            else:
-                results[threshold]['falseReject'] += 1
-            randFile = testRange[random.randint(0, len(testRange))]
-            score = compare(refFile,randFile[0:-12] + 's' + randFile[-11:], cv2.SURF_create())
-            if score >= threshold:
-                results[threshold]['falseAccept'] += 1
-            else:
-                results[threshold]['trueReject'] += 1
-            print(results)
+            refFile = testRange.pop(random.randint(0, len(testRange)-1))
+            accscore = compare(refFile, refFile[0:-12] + 's' + refFile[-11:], cv2.xfeatures2d.SURF_create())
+            randFile = testRange[random.randint(0, len(testRange) - 1)]
+            rejscore = compare(refFile, randFile[0:-12] + 's' + randFile[-11:], cv2.xfeatures2d.SURF_create())
+            for threshold in threshRange:
+                threshold = threshold / 100
+                if accscore >= threshold:
+                    results[threshold]['trueAccept'] += 1
+                else:
+                    results[threshold]['falseReject'] += 1
+                if rejscore >= threshold:
+                    results[threshold]['falseAccept'] += 1
+                else:
+                    results[threshold]['trueReject'] += 1
+            print(testNum, results)
+        testResults.append(results)
+    print(testResults)
+    for ind, res in enumerate(testResults):
+        print(ind)
+        for k,v in res.items():
+            print('\t',k,':',v)
 
 def frrTest():
     trainFiles = []
@@ -122,7 +134,7 @@ def frrTest():
     trueAccept = 0
     falseReject = 0
     for file in trainFiles:
-        simPercent = compare(trainPath + '\\' + file, trainPath + '\\' + file.replace('f', 's'), cv2.SURF_create())
+        simPercent = compare(trainPath + '/' + file, trainPath + '/' + file.replace('f', 's'), cv2.xfeatures2d.SURF_create())
         print(f'{file} compared to {file.replace("f", "s")}: {simPercent}')
 
         if simPercent > threshold:
