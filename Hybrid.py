@@ -1,17 +1,18 @@
-from Methods import orb, SIFT, Surf
-import cv2
 import math
 import os
 import random
 
+import cv2
+from Methods import SIFT, Surf, orb
+
 trainPath = "/home/clientbox/training"
 testPath = "/home/clientbox/testing"
-threshold = 3
+# threshold = 3
 
 def getSimilarity(image1, image2):
     ORBScore = orb.compare(image1, image2, cv2.ORB_create())
     SIFTScore = SIFT.compare(image1, image2, cv2.SIFT_create())
-    SURFScore = SIFT.compare(image1, image2, cv2.SIFT_create())
+    SURFScore = Surf.compare(image1, image2, cv2.xfeatures2d.SURF_create())
 
     return ORBScore + SIFTScore + SURFScore
 
@@ -21,16 +22,17 @@ def sampleTest():
 
     for file in os.listdir(trainPath):
         if file.endswith(".png") and file.startswith('f'):
-            trainFiles.append(trainPath + '\\' + file)
+            trainFiles.append(trainPath + '/' + file)
 
     for file in os.listdir(testPath):
         if file.endswith(".png") and file.startswith('f'):
-            testFiles.append(testPath + '\\' + file)
+            testFiles.append(testPath + '/' + file)
 
     testResults = []
     for testNum in range(0,10):
         results = dict()
-        threshRange = range(20, 200, 5)
+        # threshRange = range(20, 200, 5)
+        threshRange = range(300, 800, 5)
         for threshold in threshRange:
             threshold = threshold / 100
             results[threshold] = {
